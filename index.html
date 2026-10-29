@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empire Digital Unity — Team CRM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Firebase (compat build: works with plain <script> tags, no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1eMLNe3-glbcF1Gr2PEqQK9KG6XGWi0o",
+    authDomain: "empire-digital-crm.firebaseapp.com",
+    projectId: "empire-digital-crm",
+    storageBucket: "empire-digital-crm.firebasestorage.app",
+    messagingSenderId: "940522415280",
+    appId: "1:940522415280:web:68cdfb892e4aca32f10775"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const stateDocRef = db.collection("crm").doc("state");
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-bg: #010a14;
+    --navy-panel: rgba(4, 25, 48, 0.6);
+    --navy-raised: rgba(10, 46, 82, 0.85);
+    --gold: #E3C776;
+    --gold-hover: #f5da8c;
+    --gold-dim: rgba(227, 199, 118, 0.3);
+    --line: rgba(227, 199, 118, 0.15);
+    --text-main: #F5F1E6;
+    --text-muted: #8fa2b8;
+    --glow: 0 0 20px rgba(227, 199, 118, 0.15);
+  }
+  
+  body { 
+    font-family: 'Inter', sans-serif; 
+    background: radial-gradient(circle at top right, #041f3d 0%, var(--navy-bg) 60%); 
+    color: var(--text-main); 
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+  
+  .font-display { font-family: 'Cormorant Garamond', serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  
+  /* Glassmorphism Panels */
+  .panel { 
+    background: var(--navy-panel); 
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--line); 
+    border-radius: 16px; 
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .panel-raised { background: var(--navy-raised); border: 1px solid var(--gold-dim); border-radius: 16px; }
+  
+  .gold-text { color: var(--gold); }
+  .gold-bg { background: var(--gold); color: #000; box-shadow: 0 4px 14px rgba(227, 199, 118, 0.2); }
+  .gold-bg:hover { background: var(--gold-hover); transform: translateY(-1px); box-shadow: var(--glow); }
+  
+  .btn { 
+    font-size: .75rem; 
+    font-weight: 700; 
+    letter-spacing: .05em; 
+    padding: .6rem 1.2rem; 
+    border-radius: 10px; 
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+  }
+  .btn:active { transform: translateY(1px); }
+  
+  .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--gold); }
+  .btn-ghost:hover { border-color: var(--gold); background: rgba(227, 199, 118, 0.05); }
+  
+  .input { 
+    background: rgba(0, 0, 0, 0.2); 
+    border: 1px solid var(--line); 
+    border-radius: 10px; 
+    padding: .65rem 1rem; 
+    font-size: .85rem; 
+    color: var(--text-main); 
+    width: 100%; 
+    transition: all 0.2s ease;
+  }
+  .input:focus { outline: none; border-color: var(--gold); background: rgba(0, 0, 0, 0.4); box-shadow: inset 0 0 0 1px var(--gold-dim); }
+  .input::placeholder { color: rgba(143, 162, 184, 0.5); }
+  
+  .tab-pill { 
+    font-size: .75rem; 
+    font-weight: 600; 
+    letter-spacing: .03em; 
+    padding: .5rem 1.25rem; 
+    border-radius: 999px; 
+    color: var(--text-muted); 
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+  .tab-pill:hover { color: var(--gold); background: rgba(227, 199, 118, 0.05); }
+  .tab-pill.active { background: var(--gold); color: #000; font-weight: 700; box-shadow: var(--glow); }
+  
+  .divider { border-color: var(--line); }
+  
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+  
+  .badge { font-size: .65rem; font-weight: 700; letter-spacing: .05em; padding: .25rem .6rem; border-radius: 999px; text-transform: uppercase; }
+  
+  .hidden { display: none !important; }
+  
+  .trend-up { color: #7fd8a6; text-shadow: 0 0 10px rgba(127, 216, 166, 0.3); }
+  .trend-down { color: #e08a8a; text-shadow: 0 0 10px rgba(224, 138, 138, 0.3); }
+  
+  /* Animations */
+  .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(8px); } 
+    to { opacity: 1; transform: translateY(0); } 
+  }
+
+  .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+
+  /* Table Row Hover */
+  tbody tr { transition: background-color 0.2s ease; }
+  tbody tr:hover { background-color: rgba(227, 199, 118, 0.03); }
+
+  #receiptFrame { background: #fff; color: #111; }
+
+  /* Goal Progress Bars */
+  .progress-track { background: rgba(0,0,0,0.3); border-radius: 999px; height: 8px; }
+  .progress-fill { border-radius: 999px; height: 100%; transition: width 0.5s ease; }
+
+  /* Alert Item */
+  .alert-item {
+    border-left: 3px solid transparent;
+    background: rgba(0,0,0,0.2);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+  }
+
+  @media print {
+    body { background: #fff !important; }
+    body > *:not(#receiptModal) { display: none !important; }
+    #receiptModal {
+      display: flex !important;
+      position: static !important;
+      background: #fff !important;
+      inset: auto !important;
+      padding: 0 !important;
+    }
+    #receiptModal .no-print { display: none !important; }
+    #receiptFrame { overflow: visible !important; max-height: none !important; }
+  }
+  .alert-item.warning { border-left-color: #e08a8a; }
+  .alert-item.info { border-left-color: #8fb8e0; }
+  .alert-item.success { border-left-color: #7fd8a6; }
+
+  /* Sync Status Indicator */
+  #syncStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  #syncStatus .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #7fd8a6;
+    box-shadow: 0 0 8px rgba(127,216,166,0.6);
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ======================= LOGIN SCREEN ======================= -->
+<div id="loginScreen" class="min-h-screen flex flex-col items-center justify-center p-6 fade-in">
+  <div class="text-center mb-12 relative">
+    <div class="absolute -inset-4 bg-[var(--gold)] opacity-5 blur-2xl rounded-full"></div>
+    <div class="font-display text-4xl tracking-widest gold-text relative z-10 drop-shadow-lg">EMPIRE</div>
+    <div class="text-[12px] font-bold tracking-[0.4em] text-[var(--text-muted)] mt-2 relative z-10">DIGITAL UNITY</div>
+  </div>
+
+  <div id="nameTiles" class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 w-full max-w-2xl stagger-1 fade-in"></div>
+
+  <div id="codeEntry" class="panel p-8 w-full max-w-sm hidden fade-in">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 rounded-full gold-bg mx-auto flex items-center justify-center font-display text-2xl font-bold mb-4 shadow-lg" id="selectedNameInitial"></div>
+      <div class="text-lg font-semibold tracking-wide" id="selectedNameLabel"></div>
+      <div class="text-[11px] uppercase tracking-widest text-[var(--text-muted)] mt-1">Enter Security PIN</div>
+    </div>
+    <input id="codeInput" type="password" maxlength="6" class="input text-center font-mono text-2xl tracking-[0.5em] mb-4 py-3" placeholder="••••">
+    <button onclick="attemptLogin()" class="btn gold-bg w-full py-3 mb-3">LOGIN</button>
+    <button onclick="deselectName()" class="btn btn-ghost w-full">Cancel</button>
+    <div id="loginError" class="text-[12px] font-semibold text-red-400 text-center mt-4 hidden bg-red-400/10 py-2 rounded">Access Denied. Try again.</div>
+  </div>
+</div>
+
+<!-- ======================= APP SHELL ======================= -->
+<div id="appShell" class="hidden min-h-screen flex flex-col">
+
+  <header class="border-b divider bg-[var(--navy-panel)] backdrop-blur-md sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-4 cursor-pointer group" onclick="goToDashboard()">
+        <span class="font-display text-2xl gold-text tracking-widest group-hover:drop-shadow-lg transition">EMPIRE</span>
+        <div class="h-4 w-px bg-[var(--line)] hidden sm:block"></div>
+        <span class="text-[11px] font-bold tracking-[0.2em] text-[var(--text-muted)] hidden sm:block uppercase pt-1">Workspace</span>
+      </div>
+      <div class="flex items-center gap-5">
+        <div id="syncStatus" class="hidden sm:flex">
+          <span class="dot"></span>
+          <span>Synced</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full border border-[var(--gold-dim)] flex items-center justify-center text-[10px] font-bold gold-text" id="headerAvatar"></div>
+          <span class="text-xs text-[var(--text-muted)] hidden md:block">Welcome, <span id="currentUserLabel" class="text-[var(--text-main)] font-semibold tracking-wide"></span></span>
+        </div>
+        <button onclick="logout()" class="btn btn-ghost text-[10px] px-3 py-1.5 border-[var(--line)]">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8">
+
+    <!-- ============ DASHBOARD VIEW ============ -->
+    <div id="dashboardView" class="fade-in">
+      <!-- New Dashboard Analytics Section -->
+      <div class="grid md:grid-cols-2 gap-8 mb-8 stagger-1 fade-in">
+        <div class="panel p-6">
+          <h3 class="text-xs font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-4 border-b divider pb-3">Overall Growth Trend</h3>
+          <div class="relative h-[200px]">
+            <canvas id="dashboardGrowthChart"></canvas>
+          </div>
+        </div>
+        <div class="panel p-6">
+          <h3 class="text-xs font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-4 border-b divider pb-3">Alerts & Notifications</h3>
+          <div id="alertsBody" class="space-y-2 max-h-56 overflow-y-auto pr-2"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 class="font-display text-3xl mb-1 drop-shadow-md">Client Matrix</h1>
+          <p class="text-xs text-[var(--text-muted)] tracking-wide">Performance ranked by 30-day growth delta.</p>
+        </div>
+        <div class="flex gap-3 w-full md:w-auto">
+          <input type="text" id="clientSearch" placeholder="Search clients..." class="input w-full md:w-64" oninput="debouncedSearch()">
+          <button onclick="openAddClientModal()" class="btn gold-bg whitespace-nowrap shadow-lg">＋ New Client</button>
+        </div>
+      </div>
+
+      <div id="leaderboardBody" class="panel overflow-hidden mb-10 stagger-1 fade-in"></div>
+
+      <div class="grid md:grid-cols-2 gap-8 stagger-2 fade-in">
+        <div class="panel p-6">
+          <div class="flex items-center justify-between mb-5 border-b divider pb-3">
+            <h2 class="text-xs font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">Team Tasks · Global</h2>
+            <span class="text-[10px] bg-[var(--gold-dim)] text-[var(--gold)] px-2 py-1 rounded-full font-bold">All Operators</span>
+          </div>
+          <div id="myTasksBody" class="flex flex-col gap-3 text-sm"></div>
+        </div>
+        <div class="panel p-6">
+          <div class="flex items-center justify-between mb-5 border-b divider pb-3">
+            <h2 class="text-xs font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">Team Activity</h2>
+            <div class="flex gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse"></span>
+            </div>
+          </div>
+          <div id="activityFeedBody" class="flex flex-col gap-3 text-sm max-h-72 overflow-y-auto pr-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CLIENT DETAIL VIEW ============ -->
+    <div id="clientDetailView" class="hidden flex flex-col gap-8 fade-in">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--navy-panel)] p-6 rounded-2xl border border-[var(--line)] backdrop-blur-md shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-[var(--gold)] opacity-5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+        
+        <div class="flex items-start gap-4 z-10">
+          <button onclick="goToDashboard()" class="btn btn-ghost px-3 py-2 mt-1" title="Back to Dashboard">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          </button>
+          <div>
+            <h1 class="font-display text-3xl font-bold tracking-wide drop-shadow-md" id="clientDetailName">Client</h1>
+            <p class="text-xs text-[var(--text-muted)] font-medium mt-1 tracking-wide" id="clientDetailMeta"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-6 z-10">
+          <div class="text-right border-r border-[var(--line)] pr-6 hidden sm:block">
+            <div class="text-[10px] uppercase font-bold tracking-[0.15em] text-[var(--text-muted)]">Growth Score</div>
+            <div class="font-mono text-3xl gold-text font-bold drop-shadow-md mt-1" id="clientDetailScore">—</div>
+          </div>
+          <button id="deleteClientBtn" onclick="confirmDeleteClient()" class="btn btn-ghost border-red-900/50 text-red-400 hover:bg-red-900/20 hover:border-red-400 hidden">Delete Client</button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 border-b divider pb-4 px-2" id="clientTabStrip"></div>
+
+      <div id="clientTabContent" class="flex flex-col gap-6 fade-in"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================= MODALS ======================= -->
+<div id="modalRoot" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 transition-opacity">
+  <div class="panel p-8 w-full max-w-lg max-h-[85vh] overflow-y-auto transform transition-all shadow-2xl fade-in" id="modalContent"></div>
+</div>
+
+<div id="receiptModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white text-[#111] rounded-xl w-full max-w-2xl max-h-[95vh] flex flex-col shadow-2xl fade-in">
+    <div id="receiptFrame" class="p-8 sm:p-12 overflow-y-auto flex-grow"></div>
+    <div class="no-print flex gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+      <button onclick="window.print()" class="btn flex-1 bg-black text-white hover:bg-gray-800 tracking-widest">Print / Save PDF</button>
+      <button onclick="closeReceipt()" class="btn btn-ghost flex-1 border-gray-300 text-gray-700 hover:bg-gray-100">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden max-w-sm panel-raised p-5 border-l-4 shadow-2xl fade-in" style="border-left-color:var(--gold);"></div>
+
+<script>
+/* ==========================================================
+   EMPIRE DIGITAL UNITY — TEAM CRM (Enhanced + Bug Fix)
+   ========================================================== */
+
+const USERS = [
+  { id: "enockson", name: "Enockson L.C.", code: "3456", role: "admin",  canViewBilling: true  },
+  { id: "folkenberg",    name: "Folkenberg Charles", code: "3202", role: "member", canViewBilling: false },
+  { id: "philippe", name: "Jean Philippe D.", code: "3456", role: "founder", canViewBilling: true  },
+];
+
+let currentUser = null;
+let selectedNameId = null;
+let currentClientId = null;
+let currentClientTab = "overview";
+let metricRange = "daily";
+let metricFocus = "all"; 
+let platformFocus = "all"; 
+let calendarYear = new Date().getFullYear();
+let calendarMonth = new Date().getMonth();
+const PLATFORMS = ["TikTok","Facebook","Instagram","X","YouTube","Other"];
+
+function defaultState(){
+  return { clients: [], notes: [], worklogs: [], deliverables: [], payments: [], metrics: [], activity: [], paymentHistory: [], goals: [] };
+}
+
+// --- CRITICAL FIX: merge missing fields with defaults ---
+function normalizeState(raw){
+  const d = defaultState();
+  if (!raw) return d;
+  return {
+    ...d,
+    ...raw,
+    // Ensure arrays exist even if missing from older state
+    clients: Array.isArray(raw.clients) ? raw.clients : [],
+    notes: Array.isArray(raw.notes) ? raw.notes : [],
+    worklogs: Array.isArray(raw.worklogs) ? raw.worklogs : [],
+    deliverables: Array.isArray(raw.deliverables) ? raw.deliverables : [],
+    payments: Array.isArray(raw.payments) ? raw.payments : [],
+    metrics: Array.isArray(raw.metrics) ? raw.metrics : [],
+    activity: Array.isArray(raw.activity) ? raw.activity : [],
+    paymentHistory: Array.isArray(raw.paymentHistory) ? raw.paymentHistory : [],
+    goals: Array.isArray(raw.goals) ? raw.goals : []
+  };
+}
+
+function loadState(){
+  try {
+    const raw = localStorage.getItem("empire_crm_state");
+    return normalizeState(raw ? JSON.parse(raw) : null);
+  } catch(e){ return defaultState(); }
+}
+let isApplyingRemoteUpdate = false;
+let saveTimeout = null;
+
+function saveState(){
+  localStorage.setItem("empire_crm_state", JSON.stringify(state));
+  if (isApplyingRemoteUpdate) return;
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    stateDocRef.set(state).catch(err => {
+      console.error("Firestore save failed:", err);
+      showToast("Sync error", "Couldn't sync to the team database.");
+    });
+  }, 300);
+}
+
+function refreshCurrentView(){
+  if (!currentUser) return;
+  const onClientDetail = !document.getElementById("clientDetailView").classList.contains("hidden");
+  if (onClientDetail && currentClientId && getClient()){
+    renderClientDetail();
+  } else {
+    renderLeaderboard();
+    renderMyTasks();
+    renderActivityFeed();
+    renderDashboardCharts();
+    renderAlerts();
+  }
+}
+
+let state = loadState();
+
+stateDocRef.onSnapshot((doc) => {
+  if (doc.exists){
+    isApplyingRemoteUpdate = true;
+    state = normalizeState(doc.data());  // <-- normalize incoming data
+    localStorage.setItem("empire_crm_state", JSON.stringify(state));
+    refreshCurrentView();
+    isApplyingRemoteUpdate = false;
+  } else {
+    stateDocRef.set(state).catch(err => console.error("Initial Firestore seed failed:", err));
+  }
+}, (err) => {
+  console.error("Firestore listener error:", err);
+  showToast("Sync error", "Working offline — team changes won't be visible until this is fixed.");
+});
+
+function logActivity(text){
+  state.activity.unshift({ id: "A"+Date.now(), text, author: currentUser.name, ts: Date.now() });
+  state.activity = state.activity.slice(0, 40);
+  saveState();
+}
+function uid(prefix){ return prefix + "_" + Date.now() + Math.floor(Math.random()*999); }
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function money(n){
+  const v = Number(n);
+  return (Number.isFinite(v) ? v : 0).toFixed(2);
+}
+function localISODate(d = new Date()){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function parseISODateLocal(iso){
+  if (!iso) return new Date(NaN);
+  const parts = String(iso).slice(0,10).split("-").map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return new Date(iso);
+  return new Date(parts[0], parts[1]-1, parts[2]);
+}
+
+// ---------------- LOGIN ----------------
+function renderNameTiles(){
+  const box = document.getElementById("nameTiles");
+  box.innerHTML = "";
+  USERS.forEach(u => {
+    const tile = document.createElement("button");
+    tile.className = "panel p-8 flex flex-col items-center justify-center gap-4 hover:border-[var(--gold)] transition group";
+    tile.innerHTML = `
+      <div class="w-16 h-16 rounded-full bg-[rgba(227,199,118,0.1)] group-hover:bg-[var(--gold)] group-hover:text-black group-hover:shadow-[var(--glow)] transition-all flex items-center justify-center font-display text-2xl font-bold gold-text border border-[var(--gold-dim)]">${u.name.charAt(0)}</div>
+      <div class="text-[13px] font-bold tracking-wide">${u.name}</div>
+      <div class="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">${u.role}</div>`;
+    tile.onclick = () => selectName(u.id);
+    box.appendChild(tile);
+  });
+}
+function selectName(id){
+  selectedNameId = id;
+  const u = USERS.find(x=>x.id===id);
+  document.getElementById("selectedNameLabel").innerText = u.name;
+  document.getElementById("selectedNameInitial").innerText = u.name.charAt(0);
+  document.getElementById("codeEntry").classList.remove("hidden");
+  document.getElementById("nameTiles").classList.add("hidden");
+  document.getElementById("codeInput").value = "";
+  document.getElementById("loginError").classList.add("hidden");
+  document.getElementById("codeInput").focus();
+}
+function deselectName(){
+  selectedNameId = null;
+  document.getElementById("codeEntry").classList.add("hidden");
+  document.getElementById("nameTiles").classList.remove("hidden");
+}
+function attemptLogin(){
+  const u = USERS.find(x=>x.id===selectedNameId);
+  const code = document.getElementById("codeInput").value;
+  if (u && code === u.code){
+    currentUser = u;
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("appShell").classList.remove("hidden");
+    document.getElementById("currentUserLabel").innerText = u.name;
+    document.getElementById("headerAvatar").innerText = u.name.charAt(0);
+    goToDashboard();
+  } else {
+    document.getElementById("loginError").classList.remove("hidden");
+  }
+}
+function logout(){
+  currentUser = null;
+  document.getElementById("appShell").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+  deselectName();
+}
+document.getElementById("codeInput")?.addEventListener?.("keydown", e => { if(e.key==="Enter") attemptLogin(); });
+
+// ---------------- GROWTH SCORE ----------------
+function computeGrowthScore(clientId){
+  const now = Date.now();
+  const day = 86400000;
+  const recent = state.metrics.filter(m => m.clientId===clientId && now - m.ts <= 30*day);
+  const prior  = state.metrics.filter(m => m.clientId===clientId && now - m.ts > 30*day && now - m.ts <= 60*day);
+  function sum(arr, field){ return arr.reduce((a,b)=>a+(b[field]||0),0); }
+  function pctChange(field){
+    const r = sum(recent, field), p = sum(prior, field);
+    if (p === 0) return r > 0 ? 100 : 0;
+    return ((r - p) / p) * 100;
+  }
+  const vChange = pctChange("views");
+  const eChange = pctChange("engagements");
+  const dChange = pctChange("dms");
+  const score = (vChange*0.30) + (eChange*0.40) + (dChange*0.30);
+  return { score: Math.round(score*10)/10, vChange, eChange, dChange };
+}
+
+// ---------------- DASHBOARD ----------------
+function goToDashboard(){
+  currentClientId = null;
+  document.getElementById("dashboardView").classList.remove("hidden");
+  document.getElementById("clientDetailView").classList.add("hidden");
+  document.getElementById("clientSearch").value = "";
+  renderLeaderboard();
+  renderMyTasks();
+  renderActivityFeed();
+  renderDashboardCharts();
+  renderAlerts();
+}
+
+// Debounced search
+function debouncedSearch() {
+  clearTimeout(window._searchTimer);
+  window._searchTimer = setTimeout(() => {
+    renderLeaderboard();
+  }, 200);
+}
+
+function renderLeaderboard(){
+  const el = document.getElementById("leaderboardBody");
+  const searchTerm = document.getElementById("clientSearch").value.toLowerCase();
+  
+  if (state.clients.length === 0){
+    el.innerHTML = `<div class="p-12 text-center text-sm text-[var(--text-muted)] font-medium">No clients in the system yet. Click "New Client" to begin.</div>`;
+    return;
+  }
+
+  const rows = state.clients
+    .filter(c => c.name.toLowerCase().includes(searchTerm) || (c.package && c.package.toLowerCase().includes(searchTerm)))
+    .map(c => ({ c, g: computeGrowthScore(c.id) }))
+    .sort((a,b)=> b.g.score - a.g.score);
+
+  if(rows.length === 0) {
+     el.innerHTML = `<div class="p-10 text-center text-sm text-[var(--text-muted)]">No clients match your search.</div>`;
+     return;
+  }
+
+  el.innerHTML = `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left whitespace-nowrap">
+        <thead class="text-[var(--text-muted)] uppercase tracking-[0.1em] text-[10px] border-b divider bg-black/20">
+          <tr><th class="p-5 font-bold">Rank</th><th class="p-5 font-bold">Client Entity</th><th class="p-5 font-bold">Growth Score</th><th class="p-5 font-bold">30D Trend</th><th class="p-5 font-bold">Status</th></tr>
+        </thead>
+        <tbody>
+          ${rows.map((r,i)=>`
+            <tr class="border-b divider cursor-pointer group" onclick="openClient('${r.c.id}')">
+              <td class="p-5 font-mono gold-text font-bold">#${i+1}</td>
+              <td class="p-5 font-semibold group-hover:text-[var(--gold)] transition-colors">${r.c.name}</td>
+              <td class="p-5 font-mono font-medium">${r.g.score}</td>
+              <td class="p-5 font-mono font-bold ${r.g.score>=0?'trend-up':'trend-down'}">${r.g.score>=0?'▲':'▼'} ${Math.abs(r.g.score)}%</td>
+              <td class="p-5"><span class="badge border border-[var(--gold-dim)] text-[var(--gold)] bg-black/20 group-hover:bg-[var(--gold)] group-hover:text-black transition-all">${r.c.status}</span></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderMyTasks(){
+  const el = document.getElementById("myTasksBody");
+  
+  // GLOBAL view: all tasks from all users
+  const tasks = state.worklogs.slice().sort((a,b)=> {
+    // Pending first, then by newest
+    if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+    return b.ts - a.ts;
+  });
+
+  if (tasks.length === 0){
+    el.innerHTML = `<div class="text-[var(--text-muted)] text-xs italic">No tasks logged yet by any operator.</div>`;
+    return;
+  }
+
+  el.innerHTML = tasks.slice(0, 12).map(w=>{
+    const c = state.clients.find(x=>x.id===w.clientId);
+    const isMine = w.author === currentUser.name;
+    return `
+      <div class="flex items-start gap-3 border-b divider pb-3 group">
+        <button onclick="toggleWorklogComplete('${w.id}')" 
+          class="mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0
+            ${w.completed 
+              ? 'bg-[#7fd8a6] border-[#7fd8a6] text-black shadow-[0_0_8px_rgba(127,216,166,0.4)]' 
+              : 'border-[var(--line)] text-transparent hover:border-[#7fd8a6] hover:text-[#7fd8a6]/40'}"
+          title="${w.completed?'Mark as incomplete':'Mark as complete'}">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+        </button>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium leading-relaxed ${w.completed ? 'line-through text-[var(--text-muted)]' : 'group-hover:text-[var(--gold)]'} transition-colors">${w.task}</div>
+          <div class="flex items-center justify-between text-[11px] text-[var(--text-muted)] mt-1 gap-2 flex-wrap">
+            <span class="flex items-center gap-2">
+              <span class="gold-text font-bold uppercase tracking-wider">${w.author}</span>
+              ${isMine ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-[var(--gold)]/15 text-[var(--gold)] border border-[var(--gold)]/25 font-bold">you</span>' : ''}
+              <span class="opacity-40">·</span>
+              <span class="truncate max-w-[140px]">${c ? c.name : '—'}</span>
+            </span>
+            <span class="font-mono bg-black/30 px-2 py-0.5 rounded shrink-0">${new Date(w.ts).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderActivityFeed(){
+  const el = document.getElementById("activityFeedBody");
+  if (state.activity.length===0){ el.innerHTML = `<div class="text-[var(--text-muted)] text-xs italic">System activity clear.</div>`; return; }
+  el.innerHTML = state.activity.slice(0,15).map(a=>`
+    <div class="border-b divider pb-3 flex gap-3 items-start">
+      <div class="w-2 h-2 rounded-full gold-bg mt-1.5 shrink-0 opacity-60"></div>
+      <div>
+        <span class="gold-text font-bold text-xs uppercase tracking-wider">${a.author}</span>
+        <span class="text-[var(--text-main)] ml-1">${a.text}</span>
+        <div class="text-[10px] font-mono text-[var(--text-muted)] mt-1">
+          ${new Date(a.ts).toLocaleDateString(undefined, {month:'short', day:'numeric'})} · ${new Date(a.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+// Dashboard charts
+let dashboardChart = null;
+function renderDashboardCharts(){
+  // Build overall growth trend: sum of views across all clients over time (last 30 days)
+  const days = [];
+  const viewsByDay = {};
+  for(let i=0; i<30; i++){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const key = d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+    days.unshift(key);
+    viewsByDay[key] = 0;
+  }
+  state.metrics.forEach(m => {
+    const d = new Date(m.ts);
+    const key = d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+    if(viewsByDay[key] !== undefined) viewsByDay[key] += m.views;
+  });
+
+  const canvas = document.getElementById('dashboardGrowthChart');
+  if(!canvas) return;
+
+  if(dashboardChart) dashboardChart.destroy();
+  dashboardChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Total Views',
+        data: days.map(d=>viewsByDay[d]),
+        borderColor: '#E3C776',
+        backgroundColor: 'rgba(227, 199, 118, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(227,199,118,0.05)' } },
+        y: { grid: { color: 'rgba(227,199,118,0.05)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// Alerts system
+function renderAlerts(){
+  const el = document.getElementById('alertsBody');
+  let alerts = [];
+
+  // Low performance: client with negative growth score over 30 days
+  state.clients.forEach(c => {
+    const g = computeGrowthScore(c.id);
+    if (g.score < 0) {
+      alerts.push({
+        type: 'warning',
+        text: `${c.name} is trending down (${g.score}%)`,
+        ts: Date.now()
+      });
+    }
+  });
+
+  // Overdue payments (due date passed)
+  state.payments.forEach(p => {
+    const c = state.clients.find(x=>x.id===p.clientId);
+    if (c && p.dueDate && p.status !== 'Paid' && parseISODateLocal(p.dueDate) < new Date()) {
+      alerts.push({
+        type: 'info',
+        text: `${c.name} payment overdue`,
+        ts: Date.now()
+      });
+    }
+  });
+
+  // Deliverables in revision
+  state.deliverables.forEach(d => {
+    if (d.status === 'In Revision') {
+      const c = state.clients.find(x=>x.id===d.clientId);
+      alerts.push({
+        type: 'info',
+        text: `${d.name} for ${c?.name || 'client'} is in revision`,
+        ts: Date.now()
+      });
+    }
+  });
+
+  if (alerts.length === 0) {
+    el.innerHTML = `<div class="text-[var(--text-muted)] text-xs italic">All clear — no alerts.</div>`;
+    return;
+  }
+
+  el.innerHTML = alerts.slice(0,8).map(a => `
+    <div class="alert-item ${a.type} fade-in">
+      <div class="text-xs font-semibold">${a.text}</div>
+      <div class="text-[10px] text-[var(--text-muted)] mt-1">${new Date(a.ts).toLocaleDateString()}</div>
+    </div>
+  `).join('');
+}
+
+// ---------------- ADD CLIENT ----------------
+function openAddClientModal(){
+  document.getElementById("modalContent").innerHTML = `
+    <h3 class="font-display text-2xl font-bold mb-6 gold-text border-b divider pb-3">Onboard New Client</h3>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Entity Name</label>
+        <input id="newClientName" class="input" placeholder="e.g. Vanguard Global Trade">
+      </div>
+      <div>
+        <label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Service Package</label>
+        <input id="newClientPackage" class="input" placeholder="e.g. Enterprise SEO & Analytics">
+      </div>
+      <div>
+         <label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Initial Status</label>
+        <select id="newClientStatus" class="input">
+          <option>Lead</option><option selected>Active</option><option>Paused</option><option>Closed</option>
+        </select>
+      </div>
+      <div class="flex gap-3 mt-4 border-t divider pt-5">
+        <button onclick="saveNewClient()" class="btn gold-bg flex-1 py-3 text-sm">Initialize Client</button>
+        <button onclick="closeModal()" class="btn btn-ghost flex-1 py-3 text-sm">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById("modalRoot").classList.remove("hidden");
+}
+function closeModal(){ document.getElementById("modalRoot").classList.add("hidden"); }
+function saveNewClient(){
+  const name = document.getElementById("newClientName").value.trim();
+  if (!name) return;
+  const c = {
+    id: uid("CL"), name,
+    package: document.getElementById("newClientPackage").value.trim(),
+    status: document.getElementById("newClientStatus").value,
+    startDate: localISODate()
+  };
+  state.clients.push(c);
+  saveState();
+  logActivity(`onboarded entity "${name}"`);
+  closeModal();
+  renderLeaderboard();
+  showToast("Onboarding Complete", `${name} has been added to the matrix.`);
+}
+
+// ---------------- CLIENT DETAIL ----------------
+function openClient(id){
+  currentClientId = id;
+  currentClientTab = "overview";
+  metricFocus = "all";
+  platformFocus = "all";
+  
+  const dash = document.getElementById("dashboardView");
+  const detail = document.getElementById("clientDetailView");
+  
+  dash.classList.remove("fade-in");
+  dash.classList.add("hidden");
+  detail.classList.remove("hidden");
+  
+  detail.style.animation = 'none';
+  detail.offsetHeight;
+  detail.style.animation = null; 
+  
+  renderClientDetail();
+}
+function getClient(){ return state.clients.find(c=>c.id===currentClientId); }
+
+function confirmDeleteClient(){
+  if (currentUser.role !== "admin") return; 
+  const c = getClient();
+  if (!c) return;
+  document.getElementById("modalContent").innerHTML = `
+    <div class="text-center">
+      <div class="w-16 h-16 rounded-full bg-red-900/30 text-red-500 mx-auto flex items-center justify-center mb-4 border border-red-500/50">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <h3 class="font-display text-2xl mb-2 text-white drop-shadow-md">Delete "${c.name}"?</h3>
+      <p class="text-sm text-gray-400 mb-8 leading-relaxed">This action is irreversible. All associated metrics, billing records, and structural data will be permanently wiped from the CRM.</p>
+      <div class="flex gap-3">
+        <button class="btn flex-1 bg-red-600 hover:bg-red-700 text-white border-0 py-3" onclick="deleteClientConfirmed()">Confirm Purge</button>
+        <button class="btn btn-ghost flex-1 py-3" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById("modalRoot").classList.remove("hidden");
+}
+function deleteClientConfirmed(){
+  if (currentUser.role !== "admin") return; 
+  const c = getClient();
+  if (!c) return;
+  const name = c.name;
+  state.clients = state.clients.filter(x=>x.id!==c.id);
+  state.notes = state.notes.filter(x=>x.clientId!==c.id);
+  state.worklogs = state.worklogs.filter(x=>x.clientId!==c.id);
+  state.deliverables = state.deliverables.filter(x=>x.clientId!==c.id);
+  state.payments = state.payments.filter(x=>x.clientId!==c.id);
+  state.metrics = state.metrics.filter(x=>x.clientId!==c.id);
+  state.paymentHistory = state.paymentHistory.filter(x=>x.clientId!==c.id);
+  state.goals = state.goals.filter(x=>x.clientId!==c.id);
+  saveState();
+  logActivity(`purged entity "${name}"`);
+  closeModal();
+  showToast("Entity Purged", `${name} data wiped successfully.`);
+  goToDashboard();
+}
+
+function renderClientDetail(){
+  const c = getClient();
+  if (!c) return goToDashboard();
+  document.getElementById("clientDetailName").innerText = c.name;
+  document.getElementById("clientDetailMeta").innerHTML = `<span class="gold-text">${c.package || 'Custom Structure'}</span> <span class="mx-2 opacity-30">|</span> Initiated ${c.startDate} <span class="mx-2 opacity-30">|</span> ${c.status}`;
+  
+  const g = computeGrowthScore(c.id);
+  const scoreEl = document.getElementById("clientDetailScore");
+  scoreEl.innerText = (g.score>0?"+":"") + g.score;
+  scoreEl.className = `font-mono text-4xl font-bold drop-shadow-md mt-1 ${g.score >= 0 ? 'text-[#7fd8a6]' : 'text-[#e08a8a]'}`;
+
+  const delBtn = document.getElementById("deleteClientBtn");
+  if (currentUser.role === "admin") delBtn.classList.remove("hidden"); else delBtn.classList.add("hidden");
+
+  const tabs = [
+    ["overview","Overview"], ["metrics","Growth Metrics"], ["notes","Strategy Notes"],
+    ["worklog","Operations Log"], ["deliverables","Deliverables"], ["goals","Goals"]
+  ];
+  if (currentUser.canViewBilling) tabs.push(["billing","Financials"]);
+
+  document.getElementById("clientTabStrip").innerHTML = tabs.map(([key,label])=>
+    `<button class="tab-pill ${currentClientTab===key?'active':''}" onclick="switchClientTab('${key}')">${label}</button>`
+  ).join("");
+
+  renderClientTabContent();
+}
+function switchClientTab(key){ 
+  currentClientTab = key; 
+  
+  const content = document.getElementById("clientTabContent");
+  content.style.animation = 'none';
+  content.offsetHeight; 
+  content.style.animation = null;
+  content.classList.add("fade-in");
+  
+  renderClientDetail(); 
+}
+
+function renderClientTabContent(){
+  const c = getClient();
+  const el = document.getElementById("clientTabContent");
+  if (currentClientTab === "overview") el.innerHTML = renderOverviewTab(c);
+  else if (currentClientTab === "metrics") { el.innerHTML = renderMetricsTab(c); setTimeout(drawMetricsChart, 50); }
+  else if (currentClientTab === "notes") el.innerHTML = renderNotesTab(c);
+  else if (currentClientTab === "worklog") el.innerHTML = renderWorklogTab(c);
+  else if (currentClientTab === "deliverables") el.innerHTML = renderDeliverablesTab(c);
+  else if (currentClientTab === "billing" && currentUser.canViewBilling) el.innerHTML = renderBillingTab(c);
+  else if (currentClientTab === "goals") el.innerHTML = renderGoalsTab(c);
+}
+
+// ---- Overview ----
+function renderOverviewTab(c){
+  const g = computeGrowthScore(c.id);
+  return `
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="panel p-6 flex flex-col justify-center">
+        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-[#E3C776]"></div><div class="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-widest">Views Δ (30D)</div></div>
+        <div class="font-mono text-3xl font-bold ${g.vChange>=0?'trend-up':'trend-down'}">${g.vChange>=0?'+':''}${Math.round(g.vChange*10)/10}%</div>
+      </div>
+      <div class="panel p-6 flex flex-col justify-center">
+        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-[#7fd8a6]"></div><div class="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-widest">Engagements Δ (30D)</div></div>
+        <div class="font-mono text-3xl font-bold ${g.eChange>=0?'trend-up':'trend-down'}">${g.eChange>=0?'+':''}${Math.round(g.eChange*10)/10}%</div>
+      </div>
+      <div class="panel p-6 flex flex-col justify-center">
+        <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-[#8fb8e0]"></div><div class="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-widest">Conversions/DMs Δ</div></div>
+        <div class="font-mono text-3xl font-bold ${g.dChange>=0?'trend-up':'trend-down'}">${g.dChange>=0?'+':''}${Math.round(g.dChange*10)/10}%</div>
+      </div>
+    </div>
+    <div class="panel p-8">
+      <h3 class="text-sm font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-6 border-b divider pb-3">Entity Parameters</h3>
+      <div class="grid sm:grid-cols-2 gap-6 text-sm">
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Entity Name</span> <input class="input py-2.5" id="ovName" value="${escapeHtml(c.name)}"></label>
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Service Tier</span> <input class="input py-2.5" id="ovPackage" value="${escapeHtml(c.package||'')}"></label>
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Current Status</span>
+          <select class="input py-2.5" id="ovStatus">
+            ${["Lead","Active","Paused","Closed"].map(s=>`<option ${c.status===s?'selected':''}>${s}</option>`).join("")}
+          </select>
+        </label>
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Initiation Date</span> <input class="input py-2.5" id="ovStart" type="date" value="${c.startDate}"></label>
+      </div>
+      <div class="mt-8 flex justify-end">
+        <button class="btn gold-bg px-8 py-3" onclick="saveOverview()">Commit Changes</button>
+      </div>
+    </div>`;
+}
+function saveOverview(){
+  const c = getClient();
+  c.name = document.getElementById("ovName").value.trim() || c.name;
+  c.package = document.getElementById("ovPackage").value.trim();
+  c.status = document.getElementById("ovStatus").value;
+  c.startDate = document.getElementById("ovStart").value;
+  saveState();
+  logActivity(`updated parameters for "${c.name}"`);
+  renderClientDetail();
+  showToast("System Updated", "Entity parameters successfully committed.");
+}
+
+// ---- Metrics ----
+function renderMetricsTab(c){
+  return `
+    <div class="panel p-6 border-l-2 border-l-[var(--gold)]">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">Input Data Stream</h3>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+        <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Date</label><input id="mDate" type="date" class="input py-2" value="${localISODate()}"></div>
+        <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Source</label><select id="mPlatform" class="input py-2">${PLATFORMS.map(p=>`<option>${p}</option>`).join("")}</select></div>
+        <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Traffic</label><input id="mViews" type="number" class="input py-2 font-mono" placeholder="Views"></div>
+        <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Interactions</label><input id="mEng" type="number" class="input py-2 font-mono" placeholder="Eng."></div>
+        <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Leads</label><input id="mDms" type="number" class="input py-2 font-mono" placeholder="DMs"></div>
+      </div>
+      <button class="btn gold-bg mt-5 py-2.5 px-6" onclick="addMetricEntry()">Append Data</button>
+    </div>
+    
+    <div class="panel p-6">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 border-b divider pb-4">
+        <div class="flex flex-wrap gap-2 bg-black/30 p-1.5 rounded-full border border-[var(--line)]">
+          ${["all","views","engagements","dms"].map(m=>`<button class="tab-pill ${metricFocus===m?'active':''}" onclick="setMetricFocus('${m}')">${m==='all'?'Aggregate':m.charAt(0).toUpperCase()+m.slice(1)}</button>`).join("")}
+        </div>
+        <div class="flex gap-2 bg-black/30 p-1.5 rounded-full border border-[var(--line)]">
+          ${["daily","weekly","monthly"].map(r=>`<button class="tab-pill ${metricRange===r?'active':''}" onclick="setMetricRange('${r}')">${r.charAt(0).toUpperCase()+r.slice(1)}</button>`).join("")}
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-2 mb-6">
+        ${["all",...PLATFORMS].map(p=>`<button class="tab-pill text-xs px-3 py-1 bg-[var(--navy-bg)] border border-[var(--line)] ${platformFocus===p?'border-[var(--gold)] text-[var(--gold)] shadow-[var(--glow)]':''} rounded-md" onclick="setPlatformFocus('${p}')">${p==='all'?'Cross-Platform':p}</button>`).join("")}
+      </div>
+      
+      <div class="relative h-[300px] w-full">
+        <canvas id="metricsChart"></canvas>
+      </div>
+    </div>
+    
+    <div class="panel overflow-hidden">
+      <div class="flex items-center justify-between p-5 border-b divider bg-black/20">
+        <h3 class="text-xs font-bold tracking-[0.1em] text-[var(--text-muted)] uppercase">Raw Data Ledger ${platformFocus!=='all'?'· '+platformFocus:''}</h3>
+        <button class="btn btn-ghost text-[10px] py-1.5" onclick="exportMetricsCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left whitespace-nowrap">
+          <thead class="text-[var(--text-muted)] uppercase tracking-wider text-[10px] border-b divider">
+            <tr><th class="p-4 font-bold">Timestamp</th><th class="p-4 font-bold">Source</th><th class="p-4 font-bold">Traffic</th><th class="p-4 font-bold">Interactions</th><th class="p-4 font-bold">Leads</th></tr>
+          </thead>
+          <tbody>
+            ${state.metrics.filter(m=>m.clientId===c.id && (platformFocus==='all'||m.platform===platformFocus)).sort((a,b)=>b.ts-a.ts).slice(0,15).map(m=>`
+              <tr class="border-b divider">
+                <td class="p-4 font-mono text-[var(--text-muted)]">${new Date(m.ts).toLocaleDateString()}</td>
+                <td class="p-4 font-semibold">${m.platform||'Other'}</td>
+                <td class="p-4 font-mono gold-text">${Number(m.views||0).toLocaleString()}</td>
+                <td class="p-4 font-mono text-[#7fd8a6]">${Number(m.engagements||0).toLocaleString()}</td>
+                <td class="p-4 font-mono text-[#8fb8e0]">${Number(m.dms||0).toLocaleString()}</td>
+              </tr>
+            `).join("") || `<tr><td class="p-5 text-center text-[var(--text-muted)] italic" colspan="5">No telemetry data recorded.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+function setMetricRange(r){ metricRange = r; renderClientTabContent(); }
+function setMetricFocus(m){ metricFocus = m; renderClientTabContent(); }
+function setPlatformFocus(p){ platformFocus = p; renderClientTabContent(); }
+function addMetricEntry(){
+  const c = getClient();
+  const date = document.getElementById("mDate").value;
+  const platform = document.getElementById("mPlatform").value;
+  const views = parseInt(document.getElementById("mViews").value)||0;
+  const engagements = parseInt(document.getElementById("mEng").value)||0;
+  const dms = parseInt(document.getElementById("mDms").value)||0;
+  const metricTs = date ? parseISODateLocal(date).getTime() : Date.now();
+  state.metrics.push({ id: uid("M"), clientId: c.id, ts: Number.isFinite(metricTs) ? metricTs : Date.now(), platform, views, engagements, dms, author: currentUser.name });
+  saveState();
+  logActivity(`logged telemetry for "${c.name}"`);
+  renderClientDetail();
+  showToast("Telemetry Logged", `Appended data to ${platform} stream.`);
+}
+let chartInstance = null;
+function groupMetrics(clientId, range){
+  const rows = state.metrics.filter(m=>m.clientId===clientId && (platformFocus==='all'||m.platform===platformFocus)).sort((a,b)=>a.ts-b.ts);
+  const buckets = {};
+  rows.forEach(m=>{
+    const d = new Date(m.ts);
+    let key;
+    if (range==="daily") key = d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+    else if (range==="weekly"){ const onejan=new Date(d.getFullYear(),0,1); const week=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); key = `W${week}`; }
+    else key = d.toLocaleDateString(undefined, {month:'short', year:'numeric'});
+    if (!buckets[key]) buckets[key] = { views:0, engagements:0, dms:0 };
+    buckets[key].views += m.views; buckets[key].engagements += m.engagements; buckets[key].dms += m.dms;
+  });
+  return buckets;
+}
+
+function downloadCSV(filename, rows){
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportMetricsCSV(){
+  const c = getClient();
+  const rows = state.metrics
+    .filter(m=>m.clientId===c.id && (platformFocus==='all'||m.platform===platformFocus))
+    .sort((a,b)=>a.ts-b.ts);
+  const header = ["Date","Platform","Traffic","Interactions","Leads"];
+  const body = rows.map(m => [ new Date(m.ts).toISOString().slice(0,10), m.platform || "Other", m.views, m.engagements, m.dms ]);
+  const safeName = c.name.replace(/[^a-z0-9]+/gi,"_");
+  const platformLabel = platformFocus==='all' ? "Aggregate" : platformFocus;
+  downloadCSV(`EDS_${safeName}_${platformLabel}_Data.csv`, [header, ...body]);
+  showToast("Export Initiated", `Downloading data packet for ${c.name}.`);
+}
+
+function drawMetricsChart(){
+  const canvas = document.getElementById("metricsChart");
+  if (!canvas) return;
+  const buckets = groupMetrics(currentClientId, metricRange);
+  const labels = Object.keys(buckets);
+  const data = {
+    views: labels.map(l=>buckets[l].views),
+    engagements: labels.map(l=>buckets[l].engagements),
+    dms: labels.map(l=>buckets[l].dms)
+  };
+  
+  Chart.defaults.color = 'rgba(143, 162, 184, 0.7)';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  
+  if (chartInstance) chartInstance.destroy();
+  const allDatasets = [
+    { key:"views", label:"Traffic", data:data.views, borderColor:"#E3C776", backgroundColor:"rgba(227, 199, 118, 0.1)", tension:0.4, fill:true, pointBackgroundColor:"#E3C776", pointBorderColor:"#000", pointBorderWidth:2, pointRadius:4, pointHoverRadius:6 },
+    { key:"engagements", label:"Interactions", data:data.engagements, borderColor:"#7fd8a6", backgroundColor:"rgba(127, 216, 166, 0.1)", tension:0.4, fill:true, pointBackgroundColor:"#7fd8a6", pointBorderColor:"#000", pointBorderWidth:2, pointRadius:4, pointHoverRadius:6 },
+    { key:"dms", label:"Leads", data:data.dms, borderColor:"#8fb8e0", backgroundColor:"rgba(143, 184, 224, 0.1)", tension:0.4, fill:true, pointBackgroundColor:"#8fb8e0", pointBorderColor:"#000", pointBorderWidth:2, pointRadius:4, pointHoverRadius:6 },
+  ];
+  const datasets = metricFocus === "all" ? allDatasets : allDatasets.filter(d => d.key === metricFocus);
+  
+  chartInstance = new Chart(canvas, {
+    type: "line",
+    data: { labels, datasets },
+    options: { 
+      responsive:true, 
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins:{ 
+        legend:{ position: 'top', align: 'end', labels:{ boxWidth: 8, usePointStyle: true, font: { weight: 'bold', size: 11 } } },
+        tooltip: { backgroundColor: 'rgba(4, 25, 48, 0.9)', titleFont: { size: 13, family: "'JetBrains Mono', monospace" }, bodyFont: { size: 12 }, padding: 12, borderColor: 'rgba(227, 199, 118, 0.3)', borderWidth: 1 }
+      },
+      scales:{ 
+        x:{ grid:{ color:"rgba(227, 199, 118, 0.05)", drawBorder: false } }, 
+        y:{ grid:{ color:"rgba(227, 199, 118, 0.05)", drawBorder: false }, beginAtZero: true } 
+      } 
+    }
+  });
+}
+
+// ---- Notes ----
+function renderNotesTab(c){
+  const notes = state.notes.filter(n=>n.clientId===c.id).sort((a,b)=> (b.pinned-a.pinned) || (b.ts-a.ts));
+  return `
+    <div class="panel p-6 mb-2">
+      <textarea id="newNoteText" class="input py-3 resize-none focus:h-32 transition-all" rows="2" placeholder="Document strategic notes, insights, or campaign ideas..."></textarea>
+      <div class="flex items-center justify-between mt-4">
+        <label class="text-xs flex items-center gap-2 cursor-pointer group"><input type="checkbox" id="newNotePin" class="accent-[var(--gold)] w-4 h-4"><span class="group-hover:text-[var(--gold)] transition-colors">Pin to top</span></label>
+        <button class="btn gold-bg px-6" onclick="addNote()">Post Note</button>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4">
+      <div class="input w-full mb-2 flex items-center gap-2">
+        <svg class="w-4 h-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="noteSearch" class="bg-transparent border-0 outline-none flex-1" placeholder="Search notes..." oninput="renderNotesTab(getClient())">
+      </div>
+      ${notes.filter(n => n.text.toLowerCase().includes(document.getElementById('noteSearch')?.value.toLowerCase() || '')).map(n=>`
+        <div class="panel p-5 relative overflow-hidden ${n.pinned?'border-l-4':''}" style="${n.pinned?'border-left-color:var(--gold);':''}">
+          ${n.pinned ? '<div class="absolute top-0 right-0 w-8 h-8 bg-[var(--gold)]/10 flex items-start justify-end p-2 rounded-bl-full"><svg class="w-3 h-3 text-[var(--gold)]" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path></svg></div>' : ''}
+          <div class="flex justify-between items-center mb-3 border-b divider pb-2 pr-6">
+            <span class="gold-text font-bold text-xs uppercase tracking-widest">${n.author}</span>
+            <span class="text-[10px] font-mono text-[var(--text-muted)]">${new Date(n.ts).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+          </div>
+          <div class="text-sm leading-relaxed whitespace-pre-wrap text-gray-200">${n.text}</div>
+        </div>`).join("") || `<div class="text-center p-10 text-[var(--text-muted)] italic panel">No documentation found.</div>`}
+    </div>`;
+}
+function addNote(){
+  const c = getClient();
+  const text = document.getElementById("newNoteText").value.trim();
+  if (!text) return;
+  const pinned = document.getElementById("newNotePin").checked;
+  state.notes.push({ id: uid("N"), clientId: c.id, text, pinned, author: currentUser.name, ts: Date.now() });
+  saveState();
+  logActivity(`updated documentation for "${c.name}"`);
+  renderClientDetail();
+}
+
+// ---- Work Log ----
+function renderWorklogTab(c){
+  const logs = state.worklogs
+    .filter(w=>w.clientId===c.id)
+    .sort((a,b)=> (!!a.completed - !!b.completed) || (b.ts - a.ts));
+  const depts = ["Strategy","Marketing","Design","Analytics","Video"];
+  const pending = logs.filter(l=>!l.completed).length;
+  const done = logs.length - pending;
+
+  return `
+    <div class="panel p-6 border-l-2 border-l-[#8fb8e0]">
+      <h3 class="text-sm font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-4">Log Operational Action</h3>
+      <div class="grid md:grid-cols-4 gap-4">
+        <select id="wlDept" class="input py-2.5">${depts.map(d=>`<option>${d}</option>`).join("")}</select>
+        <input id="wlTask" class="input py-2.5 md:col-span-3" placeholder="Describe the executed task...">
+      </div>
+      <div class="flex justify-end mt-4">
+        <button class="btn bg-[#8fb8e0] text-[#001429] hover:bg-[#a5c6e8] px-6 py-2.5" onclick="addWorklog()">Submit Log</button>
+      </div>
+    </div>
+    
+    <div class="panel overflow-hidden mt-4">
+      <div class="flex items-center justify-between p-4 border-b divider bg-black/20">
+        <h3 class="text-xs font-bold tracking-[0.1em] text-[var(--text-muted)] uppercase">Operational Ledger</h3>
+        <div class="flex items-center gap-2 text-[10px] font-mono">
+          <span class="px-2 py-1 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] border border-[var(--gold)]/20">${pending} pending</span>
+          <span class="px-2 py-1 rounded-full bg-[#7fd8a6]/10 text-[#7fd8a6] border border-[#7fd8a6]/20">${done} done</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left whitespace-nowrap">
+          <thead class="text-[var(--text-muted)] uppercase tracking-widest text-[10px] border-b divider bg-black/20">
+            <tr>
+              <th class="p-4 font-bold w-12 text-center">✓</th>
+              <th class="p-4 font-bold w-32">Timestamp</th>
+              <th class="p-4 font-bold w-40">Operator</th>
+              <th class="p-4 font-bold w-32">Sector</th>
+              <th class="p-4 font-bold">Execution Details</th>
+              <th class="p-4 font-bold w-24 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.map(w=>`
+              <tr class="border-b divider transition-colors ${w.completed?'opacity-60 hover:opacity-90':'hover:bg-[rgba(143,184,224,0.05)]'}">
+                <td class="p-4 text-center">
+                  <button onclick="toggleWorklogComplete('${w.id}')" 
+                    class="w-5 h-5 rounded-md border mx-auto flex items-center justify-center transition-all
+                      ${w.completed ? 'bg-[#7fd8a6] border-[#7fd8a6] text-black shadow-[0_0_8px_rgba(127,216,166,0.4)]' : 'border-[var(--line)] text-transparent hover:border-[#7fd8a6] hover:text-[#7fd8a6]/40'}" 
+                    title="${w.completed?'Mark as incomplete':'Mark as complete'}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  </button>
+                </td>
+                <td class="p-4 font-mono text-xs text-[var(--text-muted)]">${new Date(w.ts).toLocaleDateString()} ${new Date(w.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                <td class="p-4 font-bold gold-text text-xs uppercase">${w.author}${w.editedBy?` <span class="text-[9px] text-[var(--text-muted)] normal-case font-normal">(edited)</span>`:''}</td>
+                <td class="p-4"><span class="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-black/30 border border-[var(--line)]">${w.dept}</span></td>
+                <td class="p-4 font-medium ${w.completed?'line-through text-[var(--text-muted)]':'text-gray-300'}">"${w.task}"</td>
+                <td class="p-4 text-right">
+                  <button onclick="openEditWorklogModal('${w.id}')" class="p-1.5 rounded hover:bg-[var(--gold)]/10 text-[var(--text-muted)] hover:text-[var(--gold)] transition-colors" title="Edit log">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  </button>
+                  <button onclick="confirmDeleteWorklog('${w.id}')" class="p-1.5 rounded hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-1" title="Delete log">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </td>
+              </tr>`).join("") || `<tr><td class="p-6 text-center text-[var(--text-muted)] italic" colspan="6">No operational logs recorded.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+function addWorklog(){
+  const c = getClient();
+  const task = document.getElementById("wlTask").value.trim();
+  if (!task) return;
+  state.worklogs.push({
+    id: uid("W"),
+    clientId: c.id,
+    dept: document.getElementById("wlDept").value,
+    task,
+    author: currentUser.name,
+    ts: Date.now(),
+    completed: false
+  });
+  saveState();
+  logActivity(`executed task on "${c.name}"`);
+  renderClientDetail();
+}
+
+function toggleWorklogComplete(id){
+  const w = state.worklogs.find(x=>x.id===id);
+  if (!w) return;
+  w.completed = !w.completed;
+  if (w.completed){
+    w.completedBy = currentUser.name;
+    w.completedTs = Date.now();
+  } else {
+    delete w.completedBy;
+    delete w.completedTs;
+  }
+  saveState();
+  const c = state.clients.find(x=>x.id===w.clientId);
+  logActivity(`${w.completed ? 'completed' : 'reopened'} a task on "${c ? c.name : ''}"`);
+  refreshCurrentView();
+  showToast(w.completed ? "Task Completed" : "Task Reopened", w.task);
+}
+
+/* ---------- WORKLOG: Edit / Delete ---------- */
+function openEditWorklogModal(id){
+  const w = state.worklogs.find(x=>x.id===id);
+  if(!w) return;
+  const depts = ["Strategy","Marketing","Design","Analytics","Video"];
+  document.getElementById("modalContent").innerHTML = `
+    <h3 class="font-display text-2xl font-bold mb-6 gold-text border-b divider pb-3">Edit Operational Log</h3>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Sector</label>
+        <select id="editWlDept" class="input py-2.5">
+          ${depts.map(d=>`<option ${w.dept===d?'selected':''}>${d}</option>`).join("")}
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Execution Details</label>
+        <textarea id="editWlTask" rows="3" class="input py-2.5 resize-none">${escapeHtml(w.task)}</textarea>
+      </div>
+      <div class="text-[10px] text-[var(--text-muted)] font-mono leading-relaxed">
+        Originally logged by <span class="gold-text font-bold">${w.author}</span> · ${new Date(w.ts).toLocaleString()}
+      </div>
+      <div class="flex gap-3 mt-4 border-t divider pt-5">
+        <button onclick="saveEditedWorklog('${w.id}')" class="btn gold-bg flex-1 py-3 text-sm">Save Changes</button>
+        <button onclick="closeModal()" class="btn btn-ghost flex-1 py-3 text-sm">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById("modalRoot").classList.remove("hidden");
+}
+
+function saveEditedWorklog(id){
+  const w = state.worklogs.find(x=>x.id===id);
+  if(!w) return;
+  const task = document.getElementById("editWlTask").value.trim();
+  if(!task){ showToast("Input Error", "Task description cannot be empty."); return; }
+  w.task = task;
+  w.dept = document.getElementById("editWlDept").value;
+  w.editedBy = currentUser.name;
+  w.editedTs = Date.now();
+  saveState();
+  const c = getClient();
+  logActivity(`edited an operational log on "${c?c.name:''}"`);
+  closeModal();
+  renderClientDetail();
+  showToast("Log Updated", "Operational entry successfully modified.");
+}
+
+function confirmDeleteWorklog(id){
+  const w = state.worklogs.find(x=>x.id===id);
+  if(!w) return;
+  document.getElementById("modalContent").innerHTML = `
+    <div class="text-center">
+      <div class="w-16 h-16 rounded-full bg-red-900/30 text-red-500 mx-auto flex items-center justify-center mb-4 border border-red-500/50">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+      </div>
+      <h3 class="font-display text-2xl mb-2 text-white drop-shadow-md">Delete this log entry?</h3>
+      <p class="text-sm text-gray-400 mb-8 leading-relaxed">"${w.task}" will be permanently removed from the operational ledger.</p>
+      <div class="flex gap-3">
+        <button class="btn flex-1 bg-red-600 hover:bg-red-700 text-white border-0 py-3" onclick="deleteWorklogConfirmed('${w.id}')">Confirm Delete</button>
+        <button class="btn btn-ghost flex-1 py-3" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById("modalRoot").classList.remove("hidden");
+}
+
+function deleteWorklogConfirmed(id){
+  const w = state.worklogs.find(x=>x.id===id);
+  if(!w) return;
+  const c = getClient();
+  state.worklogs = state.worklogs.filter(x=>x.id!==id);
+  saveState();
+  logActivity(`deleted an operational log from "${c?c.name:''}"`);
+  closeModal();
+  renderClientDetail();
+  showToast("Log Deleted", "Operational entry removed from ledger.");
+}
+
+// ---- Deliverables ----
+function renderDeliverablesTab(c){
+  const items = state.deliverables.filter(d=>d.clientId===c.id);
+  return `
+    <div class="panel p-6 border-l-2 border-l-[#7fd8a6]">
+      <h3 class="text-sm font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-4">Initialize Asset / Deliverable</h3>
+      <div class="grid md:grid-cols-4 gap-4">
+        <input id="dName" class="input py-2.5 md:col-span-3" placeholder="Asset nomenclature (e.g., Q4 Campaign Landing Page)">
+        <select id="dDept" class="input py-2.5"><option>Design</option><option>Copywriting</option><option>Video</option><option>Web Dev</option></select>
+      </div>
+      <div class="flex justify-end mt-4">
+        <button class="btn bg-[#7fd8a6] text-[#001429] hover:bg-[#9de3bb] px-6 py-2.5" onclick="addDeliverable()">Track Asset</button>
+      </div>
+    </div>
+    
+    <div class="grid sm:grid-cols-2 gap-4 mt-4">
+      ${items.map(d=>`
+        <div class="panel p-5 relative overflow-hidden group">
+          <div class="absolute top-0 left-0 w-1 h-full ${d.status==='Approved'?'bg-[#7fd8a6]':d.status==='In Revision'?'bg-[#e08a8a]':'bg-[var(--gold)]'}"></div>
+          <div class="flex justify-between items-start gap-4 mb-4 border-b divider pb-3">
+            <div>
+              <div class="font-bold text-lg leading-tight group-hover:text-[var(--gold)] transition-colors">${d.name}</div>
+              <div class="text-[10px] font-mono text-[var(--text-muted)] mt-1 uppercase tracking-widest">${d.dept}</div>
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] mb-1 block">Pipeline Status</label>
+            <select class="input py-2 text-xs font-bold ${d.status==='Approved'?'text-[#7fd8a6] border-[#7fd8a6]/30':d.status==='In Revision'?'text-[#e08a8a] border-[#e08a8a]/30':'gold-text border-[var(--gold)]/30'}" onchange="updateDeliverableStatus('${d.id}', this.value)">
+              ${["Under Review","In Revision","Approved"].map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join("")}
+            </select>
+          </div>
+        </div>`).join("") || `<div class="sm:col-span-2 text-center p-8 panel text-[var(--text-muted)] italic">No active assets in pipeline.</div>`}
+    </div>`;
+}
+function addDeliverable(){
+  const c = getClient();
+  const name = document.getElementById("dName").value.trim();
+  if (!name) return;
+  state.deliverables.push({ id: uid("D"), clientId: c.id, name, dept: document.getElementById("dDept").value, status: "Under Review" });
+  saveState();
+  logActivity(`initialized asset "${name}" for "${c.name}"`);
+  renderClientDetail();
+}
+function updateDeliverableStatus(id, status){
+  const d = state.deliverables.find(x=>x.id===id);
+  d.status = status;
+  saveState();
+  renderClientDetail();
+}
+
+// ---- Goals ----
+function renderGoalsTab(c){
+  const goals = state.goals.filter(g=>g.clientId===c.id).sort((a,b)=>b.ts-a.ts);
+  return `
+    <div class="panel p-6 border-l-2 border-l-[#E3C776]">
+      <h3 class="text-sm font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-4">Set Growth Targets (Monthly)</h3>
+      <div class="grid md:grid-cols-4 gap-4">
+        <label class="flex flex-col gap-2"><span class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Month</span><input id="goalMonth" type="month" class="input py-2.5" value="${localISODate().slice(0,7)}"></label>
+        <label class="flex flex-col gap-2"><span class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Views Target</span><input id="goalViews" type="number" class="input py-2.5 font-mono" placeholder="e.g., 10000"></label>
+        <label class="flex flex-col gap-2"><span class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Engagements Target</span><input id="goalEng" type="number" class="input py-2.5 font-mono" placeholder="e.g., 1500"></label>
+        <label class="flex flex-col gap-2"><span class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Leads Target</span><input id="goalDms" type="number" class="input py-2.5 font-mono" placeholder="e.g., 200"></label>
+      </div>
+      <div class="flex justify-end mt-4">
+        <button class="btn gold-bg px-6 py-2.5" onclick="addGoal()">Commit Goal</button>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4">
+      ${goals.map(g=>{
+        // Calculate current progress from metrics in that month
+        const month = g.month;
+        const [y, m] = month.split('-').map(Number);
+        const start = new Date(y, m-1, 1).getTime();
+        const end = new Date(y, m, 0, 23, 59, 59).getTime();
+        const metricsInMonth = state.metrics.filter(me=> me.clientId===c.id && me.ts>=start && me.ts<=end);
+        const sum = (field) => metricsInMonth.reduce((a,b)=>a+(b[field]||0),0);
+        const views = sum('views'), eng = sum('engagements'), dms = sum('dms');
+        const pViews = g.views? Math.min((views/g.views)*100, 100) : 0;
+        const pEng = g.engagements? Math.min((eng/g.engagements)*100, 100) : 0;
+        const pDms = g.dms? Math.min((dms/g.dms)*100, 100) : 0;
+        return `
+        <div class="panel p-5">
+          <div class="flex justify-between items-center mb-3 border-b divider pb-2">
+            <span class="font-bold text-sm uppercase tracking-wider">${new Date(month+'-01').toLocaleDateString(undefined, {month:'long', year:'numeric'})}</span>
+            <span class="text-[10px] font-mono text-[var(--text-muted)]">${metricsInMonth.length} data points</span>
+          </div>
+          <div class="space-y-3">
+            ${[['Views', views, g.views, pViews, '#E3C776'], ['Engagements', eng, g.engagements, pEng, '#7fd8a6'], ['Leads', dms, g.dms, pDms, '#8fb8e0']].map(([label, current, target, pct, color])=>`
+              <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                  <span class="text-[var(--text-muted)]">${label}</span>
+                  <span class="font-mono">${current.toLocaleString()} / ${target? target.toLocaleString() : '—'}</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" style="width:${pct}%; background:${color};"></div>
+                </div>
+                <div class="text-right text-[10px] mt-1 font-mono" style="color:${color}">${Math.round(pct)}%</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('') || `<div class="text-center p-10 text-[var(--text-muted)] italic panel">No goals set yet. Use the form above to create targets.</div>`}
+    </div>`;
+}
+function addGoal(){
+  const c = getClient();
+  const month = document.getElementById("goalMonth").value;
+  const views = parseInt(document.getElementById("goalViews").value)||0;
+  const engagements = parseInt(document.getElementById("goalEng").value)||0;
+  const dms = parseInt(document.getElementById("goalDms").value)||0;
+  if (!month) return;
+  state.goals.push({ id: uid("G"), clientId: c.id, month, views, engagements, dms, ts: Date.now(), author: currentUser.name });
+  saveState();
+  logActivity(`set growth goal for "${c.name}" (${month})`);
+  renderClientDetail();
+}
+
+// ---- Billing (High Priority / Structural) ----
+function renderBillingTab(c){
+  const p = state.payments.find(x=>x.clientId===c.id) || { clientId:c.id, amount:0, status:"Unpaid", dueDate:"", method:"", notes:"" };
+
+  const history = state.paymentHistory.filter(x=>x.clientId===c.id).sort((a,b)=> parseISODateLocal(b.date) - parseISODateLocal(a.date));
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const monthName = monthNames[calendarMonth];
+
+  const firstDay = new Date(calendarYear, calendarMonth, 1);
+  const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startDayOfWeek = firstDay.getDay();
+
+  const monthPayments = state.paymentHistory.filter(x => {
+    if (x.clientId !== c.id) return false;
+    const d = parseISODateLocal(x.date);
+    return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
+  });
+  const paymentsByDay = {};
+  monthPayments.forEach(x => {
+    const day = parseISODateLocal(x.date).getDate();
+    if (!paymentsByDay[day]) paymentsByDay[day] = [];
+    paymentsByDay[day].push(x);
+  });
+
+  let daysHTML = '';
+  for (let i = 0; i < startDayOfWeek; i++) daysHTML += `<div class="h-10 rounded-lg"></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const hasPayment = paymentsByDay[day];
+    const isToday = new Date().toDateString() === new Date(calendarYear, calendarMonth, day).toDateString();
+    const tooltip = hasPayment ? paymentsByDay[day].map(pay => '$'+money(pay.amount)+' via '+(pay.method||'—')).join('\n') : 'No payment';
+    daysHTML += `
+      <div class="h-10 rounded-lg flex flex-col items-center justify-center text-xs font-mono relative cursor-pointer hover:bg-white/5 transition-colors ${isToday ? 'border border-[var(--gold)] text-[var(--gold)]' : 'text-[var(--text-muted)]'} ${hasPayment ? 'bg-[#7fd8a6]/10 text-[#7fd8a6] font-bold' : ''}" title="${tooltip}">
+        <span class="leading-none">${day}</span>
+        ${hasPayment ? `<span class="w-1.5 h-1.5 rounded-full bg-[#7fd8a6] mt-0.5 shadow-[0_0_6px_rgba(127,216,166,0.6)]"></span>` : ''}
+      </div>`;
+  }
+
+  return `
+    <div class="panel p-8 relative overflow-hidden">
+      <div class="absolute top-0 right-0 p-4 opacity-10">
+        <svg class="w-32 h-32 text-[var(--gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path></svg>
+      </div>
+
+      <h3 class="text-sm font-bold tracking-[0.2em] text-[var(--gold)] uppercase mb-6 border-b divider pb-3 flex items-center gap-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Financial Ledger
+      </h3>
+
+      <div class="grid sm:grid-cols-2 gap-6 relative z-10">
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Outstanding Balance (USD)</span> 
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">$</span>
+            <input id="bAmount" type="number" step="0.01" class="input py-3 pl-8 font-mono text-lg gold-text font-bold" value="${money(p.amount)}">
+          </div>
+        </label>
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Account Status</span>
+          <select id="bStatus" class="input py-3 font-bold ${p.status==='Paid'?'text-[#7fd8a6]':p.status==='Unpaid'?'text-[#e08a8a]':'text-[var(--gold)]'}">
+            ${["Unpaid","Partial","Paid"].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join("")}
+          </select>
+        </label>
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Settlement Date</span> <input id="bDue" type="date" class="input py-3 font-mono" value="${escapeHtml(p.dueDate||'')}"></label>
+        <label class="flex flex-col gap-2"><span class="text-[11px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Routing / Method</span> <input id="bMethod" class="input py-3" value="${escapeHtml(p.method||'')}" placeholder="e.g. Zelle, Wire Transfer..."></label>
+        <label class="flex flex-col gap-2 sm:col-span-2"><span class="text-[11px] uppercase font-bold tracking-widest text-[var(--text-muted)]">Internal Financial Notes</span> <input id="bNotes" class="input py-3" value="${escapeHtml(p.notes||'')}" placeholder="Reconciliation notes, PO numbers..."></label>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t divider relative z-10">
+        <button class="btn gold-bg px-8 py-3 flex-1 text-sm shadow-[var(--glow)]" onclick="saveBilling()">Commit Ledger Entry</button>
+        <button class="btn btn-ghost px-8 py-3 flex-1 text-sm flex items-center justify-center gap-2" onclick="generateReceipt()">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Generate Official Invoice
+        </button>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="panel p-6">
+        <div class="flex items-center justify-between mb-6">
+          <button onclick="changeCalendarMonth(-1)" class="btn btn-ghost px-3 py-1 text-lg hover:text-[var(--gold)] transition-colors">‹</button>
+          <h3 class="text-sm font-bold tracking-[0.2em] gold-text uppercase text-center">${monthName} ${calendarYear}</h3>
+          <button onclick="changeCalendarMonth(1)" class="btn btn-ghost px-3 py-1 text-lg hover:text-[var(--gold)] transition-colors">›</button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+          <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+        </div>
+        <div class="grid grid-cols-7 gap-1">
+          ${daysHTML}
+        </div>
+        <div class="mt-5 flex items-center justify-center gap-5 text-[10px] text-[var(--text-muted)]">
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#7fd8a6] shadow-[0_0_6px_rgba(127,216,166,0.5)]"></span> Paid</div>
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full border border-[var(--gold)]"></span> Today</div>
+        </div>
+      </div>
+
+      <div class="panel p-6 lg:col-span-2 flex flex-col gap-6">
+        <div class="border-b divider pb-6">
+          <h3 class="text-xs font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-4">Record Payment</h3>
+          <div class="grid sm:grid-cols-3 gap-4">
+            <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Date Paid</label><input id="phDate" type="date" class="input py-2.5" value="${localISODate()}"></div>
+            <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Amount (USD)</label><div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono">$</span><input id="phAmount" type="number" step="0.01" class="input py-2.5 pl-7 font-mono" placeholder="0.00"></div></div>
+            <div><label class="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] mb-1 block">Method</label><input id="phMethod" class="input py-2.5" placeholder="Zelle, Wire, Cash..."></div>
+          </div>
+          <div class="mt-4 flex items-center gap-3">
+            <button class="btn gold-bg px-6 py-2.5" onclick="addPaymentHistory()">Record Payment</button>
+            <span class="text-[10px] text-[var(--text-muted)]">Logs to client history & calendar</span>
+          </div>
+        </div>
+
+        <div class="flex-1 min-h-0">
+          <h3 class="text-xs font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-3">Payment History (${history.length})</h3>
+          <div class="overflow-y-auto max-h-64 pr-2 space-y-2">
+            ${history.length === 0 ? '<div class="text-sm text-[var(--text-muted)] italic py-4">No payment records yet. Use the form above to log historical payments.</div>' : history.map(pay => {
+              const paidOn = parseISODateLocal(pay.date);
+              return `
+              <div class="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-[var(--line)] hover:border-[#7fd8a6]/30 transition-colors group">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-[#7fd8a6]/10 flex items-center justify-center text-[#7fd8a6] font-mono text-xs font-bold border border-[#7fd8a6]/20">${paidOn.getDate()}</div>
+                  <div>
+                    <div class="font-mono font-bold text-[var(--text-main)] text-sm">$${money(pay.amount)}</div>
+                    <div class="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">${escapeHtml(pay.method || '—')} · ${paidOn.toLocaleDateString(undefined, {month:'short', year:'numeric'})}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] font-mono text-[var(--text-muted)] bg-black/30 px-2 py-1 rounded">${paidOn.toLocaleDateString()}</div>
+                  <div class="text-[10px] text-[var(--text-muted)] mt-1">by ${escapeHtml(pay.recordedBy || '—')}</div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+function changeCalendarMonth(delta){
+  calendarMonth += delta;
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  renderClientDetail();
+}
+function collectBillingFields(){
+  const amountEl = document.getElementById("bAmount");
+  const statusEl = document.getElementById("bStatus");
+  const dueEl = document.getElementById("bDue");
+  const methodEl = document.getElementById("bMethod");
+  const notesEl = document.getElementById("bNotes");
+  if (!amountEl || !statusEl) return null;
+  const amount = parseFloat(amountEl.value);
+  return {
+    amount: Number.isFinite(amount) ? amount : NaN,
+    status: statusEl.value || "Unpaid",
+    dueDate: (dueEl?.value || "").trim(),
+    method: (methodEl?.value || "").trim(),
+    notes: (notesEl?.value || "").trim()
+  };
+}
+function saveBilling(){
+  const c = getClient();
+  if (!c || !currentUser?.canViewBilling) return;
+  const fields = collectBillingFields();
+  if (!fields) {
+    showToast("Ledger Error", "Open the Financials tab before committing a ledger entry.");
+    return;
+  }
+  if (!Number.isFinite(fields.amount) || fields.amount < 0) {
+    showToast("Input Error", "The outstanding balance must be zero or greater.");
+    return;
+  }
+  if (fields.dueDate && Number.isNaN(parseISODateLocal(fields.dueDate).getTime())) {
+    showToast("Input Error", "Please enter a valid settlement date.");
+    return;
+  }
+
+  const rec = {
+    clientId: c.id,
+    amount: Number(fields.amount.toFixed(2)),
+    status: fields.status,
+    dueDate: fields.dueDate,
+    method: fields.method,
+    notes: fields.notes,
+    updatedAt: Date.now(),
+    updatedBy: currentUser.name
+  };
+  const existing = state.payments.find(x=>x.clientId===c.id);
+  if (existing) Object.assign(existing, rec);
+  else state.payments.push(rec);
+  saveState();
+  logActivity(`updated financial ledger for "${c.name}"`);
+  renderClientDetail();
+  showToast("Ledger Updated", `Financial record committed for ${c.name}.`);
+}
+function generateReceipt(){
+  const c = getClient();
+  if (!c || !currentUser?.canViewBilling) return;
+  const live = collectBillingFields();
+  const stored = state.payments.find(x=>x.clientId===c.id) || {};
+  const p = { ...stored, ...(live || {}) };
+  if (!Number.isFinite(Number(p.amount)) || Number(p.amount) < 0) {
+    showToast("Invoice Error", "Enter a valid outstanding balance before generating the invoice.");
+    return;
+  }
+  const history = state.paymentHistory
+    .filter(x=>x.clientId===c.id)
+    .sort((a,b)=> parseISODateLocal(a.date) - parseISODateLocal(b.date));
+  // Include time so two invoices for the same client on the same day do not collide.
+  const invoiceStamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
+  const invoiceNo = `INV-${String(c.id).replace(/[^A-Za-z0-9]/g,"").slice(-8).toUpperCase()}-${invoiceStamp}`;
+  const issued = new Date().toLocaleDateString(undefined, { year:"numeric", month:"long", day:"numeric" });
+  const dueLabel = p.dueDate ? parseISODateLocal(p.dueDate).toLocaleDateString(undefined, { year:"numeric", month:"long", day:"numeric" }) : "Upon receipt";
+  const paidTotal = history.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const outstanding = Number(p.amount) || 0;
+  const historyRows = history.length
+    ? history.map(row => `
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid #eee;">${escapeHtml(parseISODateLocal(row.date).toLocaleDateString())}</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eee;">${escapeHtml(row.method || "—")}</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right;font-family:ui-monospace,monospace;">$${money(row.amount)}</td>
+        </tr>`).join("")
+    : `<tr><td colspan="3" style="padding:12px 0;color:#666;font-style:italic;">No payments recorded yet.</td></tr>`;
+
+  document.getElementById("receiptFrame").innerHTML = `
+    <div style="font-family:Georgia,'Times New Roman',serif;color:#111;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;border-bottom:2px solid #E3C776;padding-bottom:20px;margin-bottom:24px;">
+        <div>
+          <div style="letter-spacing:.35em;font-size:22px;font-weight:700;">EMPIRE</div>
+          <div style="letter-spacing:.28em;font-size:10px;color:#666;margin-top:4px;">DIGITAL UNITY</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#666;">Official Invoice</div>
+          <div style="font-family:ui-monospace,monospace;font-size:13px;margin-top:6px;">${escapeHtml(invoiceNo)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;font-family:Inter,system-ui,sans-serif;font-size:13px;">
+        <div>
+          <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#888;margin-bottom:6px;">Billed To</div>
+          <div style="font-size:18px;font-weight:700;">${escapeHtml(c.name)}</div>
+          <div style="color:#555;margin-top:4px;">${escapeHtml(c.package || "Custom Structure")}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#888;margin-bottom:6px;">Details</div>
+          <div>Issued ${escapeHtml(issued)}</div>
+          <div>Due ${escapeHtml(dueLabel)}</div>
+          <div>Status: <strong>${escapeHtml(p.status || "Unpaid")}</strong></div>
+          <div>Method: ${escapeHtml(p.method || "—")}</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-family:Inter,system-ui,sans-serif;font-size:13px;margin-bottom:24px;">
+        <thead>
+          <tr style="text-align:left;letter-spacing:.12em;text-transform:uppercase;font-size:10px;color:#888;border-bottom:1px solid #ddd;">
+            <th style="padding:8px 0;">Description</th>
+            <th style="padding:8px 0;text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:14px 0;border-bottom:1px solid #eee;">Outstanding balance / current invoice</td>
+            <td style="padding:14px 0;border-bottom:1px solid #eee;text-align:right;font-family:ui-monospace,monospace;font-weight:700;">$${money(outstanding)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-family:Inter,system-ui,sans-serif;">
+        <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#888;margin-bottom:8px;">Payment History</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="text-align:left;color:#888;font-size:10px;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid #ddd;">
+              <th style="padding:8px 0;">Date</th>
+              <th style="padding:8px 0;">Method</th>
+              <th style="padding:8px 0;text-align:right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>${historyRows}</tbody>
+        </table>
+        <div style="margin-top:18px;display:flex;justify-content:flex-end;">
+          <div style="min-width:220px;">
+            <div style="display:flex;justify-content:space-between;padding:6px 0;color:#555;"><span>Recorded paid</span><span style="font-family:ui-monospace,monospace;">$${money(paidTotal)}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #111;font-weight:700;"><span>Balance due</span><span style="font-family:ui-monospace,monospace;">$${money(outstanding)}</span></div>
+          </div>
+        </div>
+      </div>
+      ${p.notes ? `<div style="margin-top:28px;font-family:Inter,system-ui,sans-serif;font-size:12px;color:#555;"><strong>Notes:</strong> ${escapeHtml(p.notes)}</div>` : ""}
+      <div style="margin-top:36px;font-size:11px;color:#888;letter-spacing:.08em;">Prepared by ${escapeHtml(currentUser.name)} · Empire Digital Unity</div>
+    </div>`;
+  document.getElementById("receiptModal").classList.remove("hidden");
+}
+function closeReceipt(){
+  document.getElementById("receiptModal").classList.add("hidden");
+}
+function addPaymentHistory(){
+  const c = getClient();
+  if (!c || !currentUser?.canViewBilling) return;
+  const dateEl = document.getElementById("phDate");
+  const amountEl = document.getElementById("phAmount");
+  const methodEl = document.getElementById("phMethod");
+  if (!dateEl || !amountEl) {
+    showToast("Payment Error", "Open the Financials tab before recording a payment.");
+    return;
+  }
+  const date = dateEl.value;
+  const amount = parseFloat(amountEl.value);
+  const method = (methodEl?.value || "").trim();
+  if (!date || Number.isNaN(parseISODateLocal(date).getTime()) || !Number.isFinite(amount) || amount <= 0) {
+    showToast("Input Error", "Please provide a valid payment date and a positive amount.");
+    return;
+  }
+  const billing = state.payments.find(x=>x.clientId===c.id);
+  if (billing && Number.isFinite(Number(billing.amount)) && Number(billing.amount) >= 0) {
+    const balance = Number(billing.amount);
+    if (amount > balance && balance > 0) {
+      showToast("Payment Error", `Payment cannot exceed the current outstanding balance of $${money(balance)}.`);
+      return;
+    }
+  }
+
+  state.paymentHistory.push({
+    id: uid("PH"),
+    clientId: c.id,
+    date,
+    amount,
+    method,
+    recordedBy: currentUser.name,
+    ts: Date.now()
+  });
+  // Keep the operational ledger and payment history consistent.
+  if (billing && Number.isFinite(Number(billing.amount)) && Number(billing.amount) >= 0) {
+    const newBalance = Math.max(0, Number(billing.amount) - amount);
+    billing.amount = Number(newBalance.toFixed(2));
+    billing.status = newBalance === 0 ? "Paid" : "Partial";
+    billing.updatedAt = Date.now();
+    billing.updatedBy = currentUser.name;
+  }
+
+  saveState();
+  logActivity(`recorded $${money(amount)} payment for "${c.name}"`);
+  renderClientDetail();
+  showToast("Payment Logged", `$${money(amount)} recorded for ${c.name}.`);
+}
+
+// ---------------- TOAST ----------------
+function showToast(title, msg){
+  const t = document.getElementById("toast");
+  t.innerHTML = `<div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-[var(--gold)]/20 flex items-center justify-center text-[var(--gold)]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div><div><div class="text-sm font-bold gold-text tracking-wide">${title}</div><div class="text-xs text-[var(--text-main)] mt-0.5">${msg}</div></div></div>`;
+  t.classList.remove("hidden");
+  t.style.animation = 'none';
+  t.offsetHeight;
+  t.style.animation = null;
+  setTimeout(()=>t.classList.add("hidden"), 4000);
+}
+
+// ---------------- INIT ----------------
+renderNameTiles();
+</script>
+</body>
+</html>
